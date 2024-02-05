@@ -7,7 +7,7 @@ rule_files:
   # - "second.rules"
 
 scrape_configs:
-  - job_name: prometheus
+  - job_name: monitoring-server
     static_configs:
       - targets: ['10.0.0.3:9100']
   - job_name: frontend-server
@@ -25,6 +25,7 @@ scrape_configs:
 # Alertmanager configuration
 alerting:
   alertmanagers:
-  - static_configs:
+  - scheme: http  
+    static_configs:
     - targets:
-      - localhost:9093
+      - "alertmanager:9093"
