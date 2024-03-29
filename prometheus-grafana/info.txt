@@ -1,0 +1,37 @@
+Created resources:--
+1)	Frontend-server	--- Contain flutter app
+2)	Backend-server		--- Contain python api
+3)	Database server 	--- Contain mariadb database
+4)	Monitoring Server 	--- Contain Prometheus, Grafana, node exporter, alert manager
+5)	Load Balancer   ---target server “Frontend-server, port: http:80 -> 80
+6)	Volume                               ----- It is attached with Database Server – 20 Gb
+7)	Firewall name – monitoring 		--- allow 9093, 3000, ICMP, 9100, 22
+8)	Firewall name -- frontend-server 	--- allow 9093, ICMP, 9100, 80, 22, 
+9)	Firewall name – database   		--- allow 9093, ICMP, 9100, 3306
+10)	Firewall name -- backend-server 	---- allow 9093, ICMP, 9100, 22
+11)	Network resource subnet “hc_private” --- 10.0.0.0/24
+Assign static private ip address for monitor server with Prometheus, Grafana.
+12)	Network ip assign for each server – for database server fixed ip 10.0.0.2
+13)	Network ip assign for each server – for monitoring server fixed ip 10.0.0.3
+14)	Network ip assign for each server – for backend server fixed ip 10.0.0.4
+15)	Network ip assign for each server – for frontend-server server fixed ip 10.0.0.5
+16) Load balancer ip address 10.0.0.8
+16)	Create ssh key to access all server. Added public key tf_hetzner.pub.pub --- >>> public key
+
+All application install in serves with cloud-config.
+
+To connect:
+SSH agent forwarding in ubuntu:--
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/your_private_key
+ssh -A username@remote_server_ip
+
+Use this command to create ssh key :
+ssh-keygen -f  ~/.ssh/ tf_hetzner -t rsa -b 4096 -N ''
+private_key_rsa  tf_hetzner.pub  tf_hetzner.pub.pub
+
+Grafana password:--
+GF_SECURITY_ADMIN_USER=admin
+GF_SECURITY_ADMIN_PASSWORD=foobar
+GF_USERS_ALLOW_SIGN_UP=false
+

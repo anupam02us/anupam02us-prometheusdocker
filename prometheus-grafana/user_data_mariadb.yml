@@ -1,0 +1,49 @@
+#cloud-config
+users:
+  - name: devops
+    groups: users, admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBhwpoRosPVZRWo0LBJTvn5Gdu0EfaJpiblHIvsCdWdQ
+      #- ssh-rsa <key>
+package_update: true
+package_upgrade: true
+packages:
+  - fail2ban
+  - mariadb-server
+  - mariadb-client
+  - podman-docker
+  - docker.io 
+  - ufw
+runcmd:
+  - sudo apt-get install mariadb-server mariadb-client docker.io fail2ban ufw  -y
+  - sudo ufw allow 9100
+  - sudo ufw allow 9093 
+  - sudo ufw allow 3306
+  - sudo ufw allow 22 
+  - sudo systemctl enable mariadb
+  - sudo systemctl enable docker 
+  - sudo systemctl start docker 
+  - printf "[sshd]\nenabled = true\nbanaction = iptables-multiport" > /etc/fail2ban/jail.local
+  - sudo systemctl enable fail2ban
+  - sudo systemctl start fail2ban
+  - sudo systemctl enable docker
+  - sudo systemctl start fail2ban  
+  - sudo docker run -d -p 9100:9100 --restart  unless-stopped prom/node-exporter
+  - sudo docker run -d -p 9093:9093 --restart  unless-stopped prom/alertmanager
+  - ufw enable
+  - sudo sed -ie '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^PasswordAuthentication/s/^.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^X11Forwarding/s/^.*$/X11Forwarding no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^#AllowTcpForwarding/s/^.*$/AllowTcpForwarding no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile .ssh/authorized_keys/' /etc/ssh/sshd_config
+  - sudo sed -i '$a AllowUsers devops' /etc/ssh/sshd_config
+  - sudo mkdir /home/devops/flutterbuild22
+  - sudo git clone https://github.com/anupam02us/flutterbuild22.git /home/devops/flutterbuild22/
+  - chown -R devops:devops /home/devops/flutterbuild22; chmod -R 755 /home/devops/flutterbuild22/
+  - sudo sh  /home/devops/flutterbuild22/mariadb.sh
+  - sudo systemctl start mariadb
+  - sudo systemctl restart ssh

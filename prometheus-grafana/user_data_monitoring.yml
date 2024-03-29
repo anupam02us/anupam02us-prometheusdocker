@@ -1,0 +1,53 @@
+#cloud-config
+users:
+  - name: devops
+    groups: users, admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBhwpoRosPVZRWo0LBJTvn5Gdu0EfaJpiblHIvsCdWdQ
+      #- ssh-rsa <key>
+package_update: true
+package_upgrade: true
+packages:
+  - fail2ban
+  #- mariadb-server
+  - mariadb-client
+  - podman-docker
+  - docker.io 
+  - ufw
+runcmd:
+  - sudo apt-get install mariadb-client docker.io fail2ban ufw  -y
+  #- sudo apt-get install mariadb-server
+  - sudo apt-get install docker-compose -y
+  - sudo ufw allow 9100
+  - sudo ufw allow 9093 
+  - sudo ufw allow 3306
+  - sudo ufw allow 3000
+  - sudo ufw allow 9090 
+  - sudo ufw allow 80
+  - sudo ufw allow 22 
+  #- sudo systemctl enable mariadb
+  #- sudo systemctl start mariadb
+  - sudo systemctl enable docker 
+  - sudo systemctl start docker 
+  - printf "[sshd]\nenabled = true\nbanaction = iptables-multiport" > /etc/fail2ban/jail.local
+  - sudo systemctl enable fail2ban
+  - sudo systemctl start fail2ban
+  - sudo systemctl enable docker
+  - sudo systemctl start fail2ban  
+  - ufw allow 'OpenSSH'
+  - sudo mkdir /home/devops/ram
+  - sudo git clone https://github.com/anupam02us/anupam02us-prometheusdocker.git /home/devops/ram/
+  - sudo docker-compose -f /home/devops/ram/prometheus-grafana/docker-compose.yml up -d
+  - chown -R devops:devops /home/devops/ram
+  - ufw enable
+  - sudo sed -ie '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^PasswordAuthentication/s/^.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^X11Forwarding/s/^.*$/X11Forwarding no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^#AllowTcpForwarding/s/^.*$/AllowTcpForwarding no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
+  - sudo sed -ie '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile .ssh/authorized_keys/' /etc/ssh/sshd_config
+  - sudo sed -i '$a AllowUsers devops' /etc/ssh/sshd_config
+  - sudo systemctl restart ssh

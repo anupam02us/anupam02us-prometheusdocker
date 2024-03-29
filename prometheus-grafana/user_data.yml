@@ -1,0 +1,59 @@
+#cloud-config
+users:
+  - name: devops
+    groups: users, admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBhwpoRosPVZRWo0LBJTvn5Gdu0EfaJpiblHIvsCdWdQ
+      #- ssh-rsa <key>
+package_update: true
+package_upgrade: true
+packages:
+  #- nginx
+  - fail2ban
+  - ufw
+runcmd:
+  #- systemctl enable nginx
+  #- ufw allow 'Nginx HTTP'
+  - sudo ufw allow 80
+  - sudo ufw allow 9100
+  - sudo ufw allow 9093
+  - sudo ufw allow 22 
+  - printf "[sshd]\nenabled = true\nbanaction = iptables-multiport" > /etc/fail2ban/jail.local
+  - sudo apt update -y 
+  - sudo apt install mysql-client-core-8.0 libmariadb-dev -y
+  - sudo apt-get install curl file unzip zip wget -y
+  - sudo apt-get install docker.io fail2ban ufw  -y
+  - export MARIADB_CONFIG=/usr/bin/mariadb_config
+  - sudo apt install python3 python3-pip python3-venv pip -y
+  - sudo apt-get install mariadb* -y
+  - sudo pip install mariadb 
+  - sudo pip install flask
+  - sudo pip install flask-cors
+  - sudo systemctl enable docker 
+  - sudo systemctl start docker 
+  - sudo docker run -d -p 9100:9100 --restart  unless-stopped prom/node-exporter
+  - sudo docker run -d -p 9093:9093 --restart  unless-stopped prom/alertmanager
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+  - ufw allow 'OpenSSH'
+  - ufw enable
+  - sed -ie '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
+  - sed -ie '/^PasswordAuthentication/s/^.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
+  - sed -ie '/^X11Forwarding/s/^.*$/X11Forwarding no/' /etc/ssh/sshd_config
+  - sed -ie '/^#MaxAuthTries/s/^.*$/MaxAuthTries 2/' /etc/ssh/sshd_config
+  - sed -ie '/^#AllowTcpForwarding/s/^.*$/AllowTcpForwarding no/' /etc/ssh/sshd_config
+  - sed -ie '/^#AllowAgentForwarding/s/^.*$/AllowAgentForwarding no/' /etc/ssh/sshd_config
+  - sed -ie '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile .ssh/authorized_keys/' /etc/ssh/sshd_config
+  - sed -i '$a AllowUsers devops' /etc/ssh/sshd_config
+  - sudo mkdir /home/devops/flutterbuild22
+  - sudo git clone https://github.com/anupam02us/flutterbuild22.git /home/devops/flutterbuild22
+  - chown -R devops:devops /home/devops/flutterbuild22; chmod -R 755 /home/devops/flutterbuild22/
+  - sudo cp /home/devops/flutterbuild22/test.service /etc/systemd/system/test.service
+  - sudo chown root:root /etc/systemd/system/test.service
+  - sudo systemctl daemon-reload
+  - sudo systemctl start test.service
+  - sudo systemctl enable test.service
+  - systemctl restart ssh
+  - #echo "Hello! I am Nginx @ $(curl -s ipinfo.io/ip)! This record added at $(date -u)." >>/var/www/html/index.html
